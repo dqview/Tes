@@ -2,61 +2,81 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>MQTT Web Subscriber - HiveMQ</title>
+  <title>MQTT Ngebacot</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
-    body { font-family: Arial; background:#f4f6f9; padding:20px; }
-    h2 { color:#333; }
-    #status { margin-bottom:10px; font-weight:bold; }
+    body { font-family: Arial; padding:20px; background:#f4f6f9; }
     #messages {
       background:white;
-      padding:15px;
+      padding:10px;
       border-radius:8px;
+      height:250px;
+      overflow-y:auto;
+      margin-bottom:10px;
       box-shadow:0 2px 5px rgba(0,0,0,0.1);
-      max-height:300px;
-      overflow:auto;
     }
     .msg {
-      padding:8px;
+      padding:6px;
       border-bottom:1px solid #eee;
       font-size:14px;
+    }
+    input {
+      padding:8px;
+      width:70%;
+    }
+    button {
+      padding:8px 15px;
+      cursor:pointer;
     }
   </style>
 </head>
 <body>
 
-<h2>📡 MQTT Web Subscriber (HiveMQ Public Broker)</h2>
+<h2>📡 MQTT Ngobrolt</h2>
 
-<div id="status">Status: Menghubungkan...</div>
 <div id="messages"></div>
 
-<script>
-  // Ganti topic sesuai kebutuhan
-  const topic = "hgsdksfst";
+<input type="text" id="inputMsg" placeholder="Ketik pesan...">
+<button onclick="kirimPesan()">Kirim</button>
 
-  // Koneksi ke HiveMQ public broker via WebSocket
+<script>
+  const topic = "hgsdksfst";
   const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
 
-  const statusDiv = document.getElementById("status");
   const messagesDiv = document.getElementById("messages");
+  const inputMsg = document.getElementById("inputMsg");
 
+  // Saat terkoneksi
   client.on("connect", function () {
-    statusDiv.innerHTML = "Status: ✅ Terhubung ke broker.hivemq.com";
+    console.log("Terhubung ke broker");
     client.subscribe(topic);
   });
 
+  // Saat menerima pesan
   client.on("message", function (topic, message) {
     const newMsg = document.createElement("div");
     newMsg.className = "msg";
-    newMsg.innerHTML = "<b>Topic:</b> " + topic + 
-                       "<br><b>Pesan:</b> " + message.toString();
+    newMsg.textContent = message.toString();
     messagesDiv.prepend(newMsg);
   });
 
-  client.on("error", function (err) {
-    statusDiv.innerHTML = "Status: ❌ Error koneksi";
-    console.error(err);
+  // Fungsi tombol kirim
+  function kirimPesan() {
+    const pesan = inputMsg.value;
+
+    if (pesan !== "") {
+      client.publish(topic, pesan);
+      inputMsg.value = ""; // kosongkan input setelah kirim
+    }
+  }
+
+  // Kirim pesan jika tekan Enter
+  inputMsg.addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+      kirimPesan();
+    }
   });
+
 </script>
 
 </body>
