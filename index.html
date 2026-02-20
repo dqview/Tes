@@ -44,12 +44,9 @@ margin-left: 1%;
     <script>
         let angka=0;
         function updateStatus() {
-      fetch('/jem')
-        .then(response => response.text())
-        .then(data => {
-          document.getElementById("status").innerHTML = data;
-        });
-    }
+          angka++;
+        document.getElementById("status").innerHTML = angka;
+        }
         function kirim() {
   const judul = document.getElementById("judul").value;
 
@@ -66,3 +63,4 @@ margin-left: 1%;
     setInterval(updateStatus, 1000);
     </script>
 </html>
+
