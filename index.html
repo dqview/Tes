@@ -1,81 +1,157 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>MQTT Ngebacot</title>
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <style>
-    body { font-family: Arial; padding:20px; background:#f4f6f9; }
-    #messages {
-      background:white;
-      padding:10px;
-      border-radius:8px;
-      height:250px;
-      overflow-y:auto;
-      margin-bottom:10px;
-      box-shadow:0 2px 5px rgba(0,0,0,0.1);
-    }
-    .msg {
-      padding:6px;
-      border-bottom:1px solid #eee;
-      font-size:14px;
-    }
-    input {
-      padding:8px;
-      width:70%;
-    }
-    button {
-      padding:8px 15px;
-      cursor:pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>MQTT JSON Dashboard</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  background:#f4f6f9;
+  padding:20px;
+}
+
+h2 {
+  margin-bottom:10px;
+}
+
+#status {
+  font-weight:bold;
+  margin-bottom:15px;
+}
+
+.card {
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.1);
+  margin-bottom:15px;
+}
+
+input, select {
+  padding:8px;
+  margin:5px 0;
+  width:100%;
+}
+
+button {
+  padding:10px;
+  margin-top:10px;
+  width:100%;
+  cursor:pointer;
+  background:#4CAF50;
+  color:white;
+  border:none;
+  border-radius:5px;
+}
+
+#messages {
+  max-height:300px;
+  overflow-y:auto;
+}
+
+.msg {
+  padding:8px;
+  border-bottom:1px solid #eee;
+  font-size:14px;
+}
+</style>
 </head>
+
 <body>
 
-<h2>📡 MQTT Ngobrolt</h2>
+<h2>📡 MQTT JSON Dashboard</h2>
+<div id="status">Status: Menghubungkan...</div>
 
-<div id="messages"></div>
+<!-- Form Kirim Data -->
+<div class="card">
+  <h3>Kirim Data JSON</h3>
 
-<input type="text" id="inputMsg" placeholder="Ketik pesan...">
-<button onclick="kirimPesan()">Kirim</button>
+  <label>Suhu:</label>
+  <input type="input" id="suhu" placeholder="Masukkan suhu">
+
+  <label>Kelembaban:</label>
+  <input type="number" id="kelembaban" placeholder="Masukkan kelembaban">
+
+  <label>Status:</label>
+  <select id="statusDevice">
+    <option value="ON">ON</option>
+    <option value="OFF">OFF</option>
+  </select>
+
+  <button onclick="kirimJSON()">Kirim Data</button>
+</div>
+
+<!-- Tampilan Data Masuk -->
+<div class="card">
+  <h3>Data Diterima</h3>
+  <div id="messages"></div>
+</div>
 
 <script>
-  const topic = "hgsdksfst";
-  const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
 
-  const messagesDiv = document.getElementById("messages");
-  const inputMsg = document.getElementById("inputMsg");
+// Topic bebas (ganti kalau mau unik)
+const topic = "hgsdksfst";
 
-  // Saat terkoneksi
-  client.on("connect", function () {
-    console.log("Terhubung ke broker");
-    client.subscribe(topic);
-  });
+// Koneksi ke HiveMQ public broker
+const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
 
-  // Saat menerima pesan
-  client.on("message", function (topic, message) {
-    const newMsg = document.createElement("div");
-    newMsg.className = "msg";
-    newMsg.textContent = message.toString();
-    messagesDiv.prepend(newMsg);
-  });
+const statusDiv = document.getElementById("status");
+const messagesDiv = document.getElementById("messages");
 
-  // Fungsi tombol kirim
-  function kirimPesan() {
-    const pesan = inputMsg.value;
+// Saat terkoneksi
+client.on("connect", function () {
+  statusDiv.innerHTML = "Status: ✅ Terhubung ke broker.hivemq.com";
+  client.subscribe(topic);
+});
 
-    if (pesan !== "") {
-      client.publish(topic, pesan);
-      inputMsg.value = ""; // kosongkan input setelah kirim
-    }
+// Saat menerima pesan
+client.on("message", function (topic, message) {
+
+  const pesanString = message.toString();
+
+  const newMsg = document.createElement("div");
+  newMsg.className = "msg";
+
+  try {
+    const data = JSON.parse(pesanString);
+
+    newMsg.innerHTML =
+      "<b>Suhu:</b> " + data.suhu + " °C<br>" +
+      "<b>Kelembaban:</b> " + data.kelembaban + " %<br>" +
+      "<b>Status:</b> " + data.status + "<br>" +
+      "<b>Waktu:</b> " + data.waktu;
+
+  } catch (e) {
+    newMsg.textContent = pesanString;
   }
 
-  // Kirim pesan jika tekan Enter
-  inputMsg.addEventListener("keypress", function(event) {
-    if (event.key === "Enter") {
-      kirimPesan();
-    }
-  });
+  messagesDiv.prepend(newMsg);
+});
+
+// Fungsi kirim JSON
+function kirimJSON() {
+
+  const suhu = document.getElementById("suhu").value;
+  const kelembaban = document.getElementById("kelembaban").value;
+  const statusDevice = document.getElementById("statusDevice").value;
+
+  if (suhu === "" || kelembaban === "") {
+    alert("Isi semua data terlebih dahulu!");
+    return;
+  }
+
+  const data = {
+    suhu:(suhu),
+    kelembaban: Number(kelembaban),
+    status: statusDevice,
+    waktu: new Date().toLocaleString()
+  };
+
+  client.publish(topic, JSON.stringify(data));
+
+}
 
 </script>
 
