@@ -118,8 +118,8 @@ client.on("message", function (topic, message) {
     const data = JSON.parse(pesanString);
 
     newMsg.innerHTML =
-      "<b>Suhu:</b> " + data.suhu + " °C<br>" +
-      "<b>Kelembaban:</b> " + data.kelembaban + " %<br>" +
+      "<b>Text:</b> " + data.suhu + " °C<br>" +
+      "<b>Kecerahan:</b> " + data.kelembaban + " %<br>" +
       "<b>Status:</b> " + data.status + "<br>" +
       "<b>Waktu:</b> " + data.waktu;
 
@@ -137,7 +137,7 @@ function kirimJSON() {
   const kelembaban = document.getElementById("kelembaban").value;
   const statusDevice = document.getElementById("statusDevice").value;
 
-  if (suhu === "" || kelembaban === "") {
+  if (kelembaban === "") {
     alert("Isi semua data terlebih dahulu!");
     return;
   }
@@ -157,3 +157,4 @@ function kirimJSON() {
 
 </body>
 </html>
+
