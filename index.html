@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>MQTT JSON Dashboard</title>
+<title>MQTT 2 Topic Dashboard</title>
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
 <style>
@@ -12,13 +12,16 @@ body {
   padding:20px;
 }
 
-h2 {
-  margin-bottom:10px;
-}
+h2 { margin-bottom:10px; }
 
 #status {
   font-weight:bold;
   margin-bottom:15px;
+}
+.sat {
+/*background:#0a3f8e;*/
+height: 5vh;
+width: 50%;
 }
 
 .card {
@@ -30,7 +33,7 @@ h2 {
 }
 
 input, select {
-  padding:8px;
+  padding:2px;
   margin:5px 0;
   width:100%;
 }
@@ -67,14 +70,13 @@ button {
 <!-- Form Kirim Data -->
 <div class="card">
   <h3>Kirim Data JSON</h3>
-
+  <div class="sat"><p >Status: <span id="gtk">---</span></p><br></div><br>
   <label>Text:</label>
   <input type="input" id="suhu" placeholder="Masukkan suhu">
 
   <label>Kecerahan:</label>
   <input type="number" id="kelembaban" placeholder="Masukkan kelembaban">
-
-  <label>Status:</label>
+   <label>Status:</label>
   <select id="statusDevice">
     <option value="ON">ON</option>
     <option value="OFF">OFF</option>
@@ -91,10 +93,11 @@ button {
 
 <script>
 
-// Topic bebas (ganti kalau mau unik)
-const topic = "hgsdksfst";
+// ====== TOPIC ======
+const topicSensor = "hgsdksfst";
+const topicKontrol = "jhdsghks";
 
-// Koneksi ke HiveMQ public broker
+// ====== CONNECT MQTT ======
 const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
 
 const statusDiv = document.getElementById("status");
@@ -103,41 +106,56 @@ const messagesDiv = document.getElementById("messages");
 // Saat terkoneksi
 client.on("connect", function () {
   statusDiv.innerHTML = "Status: ✅ Terhubung ke broker.hivemq.com";
-  client.subscribe(topic);
+  client.subscribe(topicSensor);
+  client.subscribe(topicKontrol);
+  console.log("Subscribe ke 2 topic berhasil");
 });
 
 // Saat menerima pesan
-client.on("message", function (topic, message) {
+client.on("message", function (topicName, message) {
 
-  const pesanString = message.toString();
-
+  let isi = message.toString();
+  console.log("Topic:", topicName);
+ // console.log("Pesan:", isi);
+  document.getElementById("gtk").innerHTML = isi;
+ 
   const newMsg = document.createElement("div");
   newMsg.className = "msg";
 
-  try {
-    const data = JSON.parse(pesanString);
+  // Jika JSON
+ 
 
+
+  try {
+    const data = JSON.parse(isi);
+ if(topicName === topicSensor  ){
     newMsg.innerHTML =
-      "<b>Text:</b> " + data.suhu + " °C<br>" +
-      "<b>Kecerahan:</b> " + data.kelembaban + " %<br>" +
-      "<b>Status:</b> " + data.status + "<br>" +
-      "<b>Waktu:</b> " + data.waktu;
+      "<b>Topic:</b> " + topicName + "<br>" +
+      "<b>Text:</b> " + (data.suhu ?? "-") + " °C<br>" +
+      "<b>Kecerahan:</b> " + (data.kelembaban ?? "-") + " %<br>" +
+      "<b>Status:</b> " + (data.status ?? "-") + "<br>" +
+      "<b>Waktu:</b> " + (data.waktu ?? "-"); }
 
   } catch (e) {
-    newMsg.textContent = pesanString;
+    // Jika bukan JSON
+    newMsg.innerHTML =
+      "<b>Topic:</b> " + topicName + "<br>" +
+      "<b>Pesan:</b> " + isi; 
   }
-
-  messagesDiv.prepend(newMsg);
+  
+    if(topicName === topicSensor  ){
+       messagesDiv.prepend(newMsg);}
 });
+  
 
-// Fungsi kirim JSON
+// ====== FUNGSI KIRIM JSON ======
 function kirimJSON() {
-
+  
   const suhu = document.getElementById("suhu").value;
   const kelembaban = document.getElementById("kelembaban").value;
   const statusDevice = document.getElementById("statusDevice").value;
 
-  if (kelembaban === "") {
+  if ( kelembaban === "") {
     alert("Isi semua data terlebih dahulu!");
     return;
   }
@@ -149,13 +167,19 @@ function kirimJSON() {
     waktu: new Date().toLocaleString()
   };
 
-  client.publish(topic, JSON.stringify(data));
+  // Kirim ke topic sensor
+  client.publish(topicSensor, JSON.stringify(data));
 
+  console.log("Data dikirim:", data);
 }
+ let angka=0;
+    function updateStatus() {
+      angka++;
+     
+    }
+        setInterval(updateStatus, 1000);
 
 </script>
 
 </body>
 </html>
-
-
